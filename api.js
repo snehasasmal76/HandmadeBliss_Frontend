@@ -9,10 +9,9 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 // Use the cors middleware for robust CORS handling.
 app.use(cors({ origin: true, credentials: true }));
 
-// Proxy all /api requests to the real backend to avoid cross-origin issues.
-// This forwards requests to http://127.0.0.1:8000 while serving frontend from this server.
+// Proxy all /api requests to the deployed backend to avoid cross-origin issues.
 app.use('/api', createProxyMiddleware({
-  target: 'http://127.0.0.1:8000',
+  target: 'https://handmadebliss-backend-3-h5ms.onrender.com',
   changeOrigin: true,
   pathRewrite: { '^/api': '/api' },
   logLevel: 'warn'
