@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Handmade Bliss product details">
+    <title>Handmade Bliss | Product Details</title>
+    <link rel="stylesheet" href="product-detail.css">
+</head>
+<body>
+    <header class="site-header">
+        <nav class="nav-shell" aria-label="Main navigation">
+            <a class="brand" href="product-detail.html" aria-label="Handmade Bliss home">
+                <span class="brand-mark">HB</span>
+                <span>Handmade <em>Bliss</em></span>
+            </a>
+            <div class="header-actions">
+                <button class="icon-button" type="button" aria-label="Search" title="Search">&#9906;</button>
+                <a class="icon-button" href="wishlist.html" aria-label="Open wishlist" title="Open wishlist">&#9825;</a>
+                <a class="cart-button" href="cart.html" aria-label="Open cart" title="Open cart">
+                    <span aria-hidden="true">&#128722;</span><b id="cart-count">0</b>
+                </a>
+                <button class="account-button" type="button" id="account-button" aria-expanded="false" aria-controls="account-panel">Account</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="product-detail.html">Home</a><span aria-hidden="true">/</span>
+            <a href="#similar-products" id="breadcrumb-category">Collection</a><span aria-hidden="true">/</span>
+            <strong id="breadcrumb-name">Product</strong>
+        </nav>
+
+        <section class="product-layout" aria-label="Product information">
+            <div class="gallery-panel">
+                <div class="main-image-frame">
+                    <span class="image-badge">HANDMADE</span>
+                    <img id="main-product-image" src="" alt="">
+                </div>
+                <div class="thumbnail-list" id="thumbnail-list" aria-label="Product image gallery"></div>
+                <p class="gallery-caption">Made slowly, thoughtfully, and with care by independent artisans.</p>
+            </div>
+
+            <article class="product-copy">
+                <p class="eyebrow" id="product-category">Handmade collection</p>
+                <h1 id="product-name">Loading product...</h1>
+                <div class="rating" aria-label="Rated 4.8 out of 5">&#9733;&#9733;&#9733;&#9733;&#9733; <span>4.8 (24 reviews)</span></div>
+                <div class="price-row"><p class="price" id="product-price"></p><span>Inclusive of taxes</span></div>
+                <p class="short-description" id="product-description"></p>
+
+                <div class="availability-row">
+                    <span class="availability-dot" aria-hidden="true"></span>
+                    <strong id="stock-message">In stock</strong>
+                    <span id="product-id"></span>
+                </div>
+
+                <div class="purchase-controls">
+                    <div>
+                        <label class="control-label" for="quantity">Quantity</label>
+                        <div class="quantity-control">
+                            <button type="button" id="decrease-quantity" aria-label="Decrease quantity">-</button>
+                            <input id="quantity" type="number" value="1" min="1" readonly>
+                            <button type="button" id="increase-quantity" aria-label="Increase quantity">+</button>
+                        </div>
+                    </div>
+                    <button class="primary-button" type="button" id="add-to-cart">Add to cart</button>
+                </div>
+                <button class="wishlist-button" type="button" id="add-to-wishlist"><span aria-hidden="true">&#9825;</span> Add to wishlist</button>
+
+                <div class="product-facts">
+                    <div class="fact"><span>Handmade</span><strong>100% artisan crafted</strong></div>
+                    <div class="fact"><span>Shipping</span><strong>Free shipping on every order</strong></div>
+                    <div class="fact"><span>Returns</span><strong>Easy returns within 7 days</strong></div>
+                </div>
+            </article>
+        </section>
+
+        <section class="information-grid" aria-label="More product information">
+            <article class="information-card"><p class="eyebrow">Product details</p><h2>Thoughtful by design</h2><p id="product-details"></p></article>
+            <article class="information-card"><p class="eyebrow">Material &amp; care</p><h2>Made to be loved</h2><p><strong id="product-material"></strong></p><p id="product-care"></p></article>
+            <article class="information-card"><p class="eyebrow">Availability</p><h2 id="availability-heading">Ready to ship</h2><p id="availability-copy"></p></article>
+        </section>
+
+        <section class="similar-section" id="similar-products">
+            <div class="section-heading"><div><p class="eyebrow">Curated for you</p><h2>Similar products</h2></div><p>More beautiful pieces from Handmade Bliss</p></div>
+            <div class="similar-grid" id="similar-grid"></div>
+        </section>
+    </main>
+
+    <aside class="account-panel" id="account-panel" aria-label="Account details" hidden>
+        <div class="account-panel-header">
+            <div>
+                <p class="eyebrow">Your account</p>
+                <h2>Account details</h2>
+            </div>
+            <button class="account-close" type="button" id="account-close" aria-label="Close account details">&times;</button>
+        </div>
+        <div class="account-profile">
+            <span class="account-avatar" aria-hidden="true">G</span>
+            <div><strong>Guest shopper</strong><p>Welcome to Handmade Bliss</p></div>
+        </div>
+        <dl class="account-summary">
+            <div><dt>Saved items</dt><dd id="account-wishlist-count">0</dd></div>
+            <div><dt>Cart items</dt><dd id="account-cart-count">0</dd></div>
+            <div><dt>Orders</dt><dd>0</dd></div>
+        </dl>
+        <p class="account-note">Sign in to save your details and view your orders.</p>
+    </aside>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="product-detail.js"></script>
+</body>
+</html>
