@@ -11,7 +11,7 @@ app.use(cors({ origin: true, credentials: true }));
 
 // Proxy all /api requests to the deployed backend to avoid cross-origin issues.
 app.use('/api', createProxyMiddleware({
-  target: 'https://handmadebliss-backend-3-h5ms.onrender.com',
+  target: 'https://handmadebliss-backend-5-mxjr.onrender.com',
   changeOrigin: true,
   pathRewrite: { '^/api': '/api' },
   logLevel: 'warn'

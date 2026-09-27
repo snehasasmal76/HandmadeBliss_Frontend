@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://handmadebliss-backend-3-h5ms.onrender.com';
+const API_BASE_URL = 'https://handmadebliss-backend-5-mxjr.onrender.com';
 
 async function fetchApi(path, options = {}) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
