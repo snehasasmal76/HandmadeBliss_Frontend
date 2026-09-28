@@ -16,10 +16,8 @@
             </a>
             <div class="header-actions">
                 <button class="icon-button" type="button" aria-label="Search" title="Search">&#9906;</button>
-                <a class="icon-button" href="wishlist.html" aria-label="Open wishlist" title="Open wishlist">&#9825;</a>
-                <a class="cart-button" href="cart.html" aria-label="Open cart" title="Open cart">
-                    <span aria-hidden="true">&#128722;</span><b id="cart-count">0</b>
-                </a>
+                <button class="icon-button" type="button" id="wishlist-icon" aria-label="Save this product to your wishlist" title="Save this product to your wishlist">&#9825;</button>
+                <button class="cart-button" type="button" id="cart-icon" aria-label="Add this product to your cart" title="Add this product to your cart"><span aria-hidden="true">&#128722;</span></button>
                 <button class="account-button" type="button" id="account-button" aria-expanded="false" aria-controls="account-panel">Account</button>
             </div>
         </nav>
@@ -96,20 +94,12 @@
             </div>
             <button class="account-close" type="button" id="account-close" aria-label="Close account details">&times;</button>
         </div>
-        <div class="account-profile">
-            <span class="account-avatar" aria-hidden="true">G</span>
-            <div><strong>Guest shopper</strong><p>Welcome to Handmade Bliss</p></div>
-        </div>
-        <dl class="account-summary">
-            <div><dt>Saved items</dt><dd id="account-wishlist-count">0</dd></div>
-            <div><dt>Cart items</dt><dd id="account-cart-count">0</dd></div>
-            <div><dt>Orders</dt><dd>0</dd></div>
-        </dl>
-        <p class="account-note">Sign in to save your details and view your orders.</p>
+        <div id="account-content"></div>
     </aside>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script src="api-config.js"></script>
+    <script src="account.js"></script>
     <script src="product-detail.js"></script>
 </body>
 </html>

@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Candleaf - Product Page</title>
+    <title>Handmade Bliss | Product Details</title>
+    <script>
+        const destination = new URL('product-detail.html', window.location.href);
+        const productId = new URLSearchParams(window.location.search).get('id');
+        if (productId) destination.searchParams.set('id', productId);
+        window.location.replace(destination.href);
+    </script>
     <style>
         * {
             margin: 0;

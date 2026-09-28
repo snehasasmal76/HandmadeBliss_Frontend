@@ -17,26 +17,51 @@ function normalizeProduct(rawProduct) {
     return { ...rawProduct, name: rawProduct.name || rawProduct.title, image, images: rawProduct.images || [image], category: rawProduct.category || 'Handmade collection', details: rawProduct.details || 'Thoughtfully made by independent artisans.' };
 }
 
-const state = { product: null, quantity: 1, wishlist: JSON.parse(localStorage.getItem('handmade-bliss-wishlist') || '[]'), cart: JSON.parse(localStorage.getItem('handmade-bliss-cart') || '[]') };
+const state = { product: null, quantity: 1, wishlist: [] };
 const byId = id => document.getElementById(id);
 
 function showToast(message) { const toast = byId('toast'); toast.textContent = message; toast.classList.add('show'); clearTimeout(showToast.timer); showToast.timer = setTimeout(() => toast.classList.remove('show'), 2600); }
-function saveState() { localStorage.setItem('handmade-bliss-wishlist', JSON.stringify(state.wishlist)); localStorage.setItem('handmade-bliss-cart', JSON.stringify(state.cart)); byId('cart-count').textContent = state.cart.reduce((total, item) => total + item.quantity, 0); updateAccountSummary(); }
-function updateAccountSummary() { byId('account-wishlist-count').textContent = state.wishlist.length; byId('account-cart-count').textContent = state.cart.reduce((total, item) => total + item.quantity, 0); }
-function toggleAccountPanel(forceOpen) { const panel = byId('account-panel'); const shouldOpen = forceOpen ?? panel.hidden; panel.hidden = !shouldOpen; byId('account-button').setAttribute('aria-expanded', String(shouldOpen)); if (shouldOpen) updateAccountSummary(); }
 function renderGallery(product) { const list = byId('thumbnail-list'); list.innerHTML = ''; product.images.slice(0, 4).forEach((imageUrl, index) => { const button = document.createElement('button'); button.className = `thumbnail${index === 0 ? ' active' : ''}`; button.type = 'button'; button.setAttribute('aria-label', `View image ${index + 1}`); button.innerHTML = `<img src="${imageUrl}" alt="${product.name} image ${index + 1}">`; button.addEventListener('click', () => { byId('main-product-image').src = imageUrl; list.querySelectorAll('.thumbnail').forEach(item => item.classList.remove('active')); button.classList.add('active'); }); list.appendChild(button); }); }
-function renderProduct(product) { state.product = product; state.quantity = 1; const stock = Number(product.stock) || 0; byId('main-product-image').src = product.image; byId('main-product-image').alt = product.name; byId('product-name').textContent = product.name; byId('product-category').textContent = product.category; byId('product-price').textContent = `₹${product.price.toLocaleString('en-IN')}`; byId('product-description').textContent = product.description; byId('product-id').textContent = `Product ID: HB-${String(product.id).padStart(3, '0')}`; byId('quantity').value = 1; byId('quantity').max = stock; byId('breadcrumb-category').textContent = product.category; byId('breadcrumb-name').textContent = product.name; byId('product-details').textContent = product.details; byId('product-material').textContent = product.material; byId('product-care').textContent = product.care; byId('availability-heading').textContent = stock > 0 ? 'Ready to ship' : 'Currently unavailable'; byId('availability-copy').textContent = stock > 0 ? `${stock} pieces available. Your order will be carefully packed and dispatched within 2-3 business days.` : 'This piece is currently out of stock. Check back soon for the next artisan batch.'; byId('stock-message').textContent = stock > 0 ? `${stock} available` : 'Out of stock'; document.querySelector('.availability-dot').style.background = stock > 0 ? '#3cb27c' : '#e87568'; byId('add-to-cart').disabled = stock === 0; renderGallery(product); updateWishlistButton(); document.title = `Handmade Bliss | ${product.name}`; }
+function renderProduct(product) { state.product = product; state.quantity = 1; const stock = Number(product.stock) || 0; byId('main-product-image').src = product.image; byId('main-product-image').alt = product.name; byId('product-name').textContent = product.name; byId('product-category').textContent = product.category; byId('product-price').textContent = `₹${product.price.toLocaleString('en-IN')}`; byId('product-description').textContent = product.description; byId('product-id').textContent = `Product ID: HB-${String(product.id).padStart(3, '0')}`; byId('quantity').value = 1; byId('quantity').max = stock; byId('breadcrumb-category').textContent = product.category; byId('breadcrumb-name').textContent = product.name; byId('product-details').textContent = product.details || 'Thoughtfully made by independent artisans.'; byId('product-material').textContent = product.material || 'See product description'; byId('product-care').textContent = product.care || ''; byId('availability-heading').textContent = stock > 0 ? 'Ready to ship' : 'Currently unavailable'; byId('availability-copy').textContent = stock > 0 ? `${stock} pieces available. Your order will be carefully packed and dispatched within 2-3 business days.` : 'This piece is currently out of stock. Check back soon for the next artisan batch.'; byId('stock-message').textContent = stock > 0 ? `${stock} available` : 'Out of stock'; document.querySelector('.availability-dot').style.background = stock > 0 ? '#3cb27c' : '#e87568'; byId('add-to-cart').disabled = stock === 0; byId('cart-icon').disabled = stock === 0; byId('add-to-wishlist').disabled = false; byId('wishlist-icon').disabled = false; renderGallery(product); updateWishlistButton(); document.title = `Handmade Bliss | ${product.name}`; }
 function renderSimilarProducts(products) { const currentId = state.product.id; const grid = byId('similar-grid'); grid.innerHTML = ''; products.filter(product => Number(product.id) !== Number(currentId)).slice(0, 6).forEach(rawProduct => { const product = normalizeProduct(rawProduct); const card = document.createElement('a'); card.className = 'similar-card'; card.href = `product-detail.html?id=${product.id}`; card.innerHTML = `<div class="similar-image"><img src="${product.image}" alt="${product.name}" loading="lazy"></div><h3>${product.name}</h3><p>${product.category}</p><p class="similar-price">₹${Number(product.price).toLocaleString('en-IN')}</p>`; card.addEventListener('click', event => { event.preventDefault(); history.pushState({}, '', card.href); loadPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); }); grid.appendChild(card); }); }
-function updateWishlistButton() { const button = byId('add-to-wishlist'); const added = state.wishlist.includes(state.product.id); button.classList.toggle('is-added', added); button.innerHTML = added ? '<span aria-hidden="true">&#9829;</span> Added to wishlist' : '<span aria-hidden="true">&#9825;</span> Add to wishlist'; }
+function updateWishlistButton() { if (!state.product) return; const added = state.wishlist.includes(Number(state.product.id)); const button = byId('add-to-wishlist'); button.classList.toggle('is-added', added); button.innerHTML = added ? '<span aria-hidden="true">&#9829;</span> Added to wishlist' : '<span aria-hidden="true">&#9825;</span> Add to wishlist'; byId('wishlist-icon').innerHTML = added ? '&#9829;' : '&#9825;'; byId('wishlist-icon').setAttribute('aria-pressed', String(added)); }
 function changeQuantity(amount) { const max = Number(state.product.stock) || 1; state.quantity = Math.max(1, Math.min(max, state.quantity + amount)); byId('quantity').value = state.quantity; }
-async function loadPage() { const requestedId = Number(new URLSearchParams(window.location.search).get('id')) || 1; try { const [rawProduct, products] = await Promise.all([fetchApi(`/api/products/${requestedId}`), fetchApi('/api/products?limit=100')]); renderProduct(normalizeProduct(rawProduct)); renderSimilarProducts(products); } catch (error) { const rawProduct = MOCK_PRODUCTS.find(product => product.id === requestedId) || MOCK_PRODUCTS[0]; renderProduct(normalizeProduct(rawProduct)); renderSimilarProducts(MOCK_PRODUCTS); showToast('Live products are temporarily unavailable.'); } }
+async function loadWishlist() { const account = getApiSession(); state.wishlist = account ? await getServerWishlist(account.id) : []; updateWishlistButton(); }
+async function loadPage() { const requestedId = Number(new URLSearchParams(window.location.search).get('id')) || 1; try { const [rawProduct, products] = await Promise.all([fetchApi(`/api/products/${requestedId}`), fetchApi('/api/products?limit=100')]); renderProduct(normalizeProduct(rawProduct)); renderSimilarProducts(products); } catch (error) { byId('product-name').textContent = 'Product unavailable'; byId('product-description').textContent = 'This product could not be loaded from the store. Please try again later.'; byId('add-to-cart').disabled = true; byId('cart-icon').disabled = true; byId('add-to-wishlist').disabled = true; byId('wishlist-icon').disabled = true; byId('similar-grid').replaceChildren(); showToast(error.message || 'The product service is unavailable.'); } }
 
-byId('account-button').addEventListener('click', () => toggleAccountPanel());
-byId('account-close').addEventListener('click', () => toggleAccountPanel(false));
-document.addEventListener('click', event => { if (!event.target.closest('.account-panel, #account-button')) toggleAccountPanel(false); });
+initAccountPanel();
+document.addEventListener('accountchange', () => loadWishlist().catch(error => showToast(error.message)));
 byId('decrease-quantity').addEventListener('click', () => changeQuantity(-1));
 byId('increase-quantity').addEventListener('click', () => changeQuantity(1));
-byId('add-to-cart').addEventListener('click', () => { if (!state.product || !state.product.stock) return showToast('This product is currently out of stock.'); const existing = state.cart.find(item => item.productId === state.product.id); if (existing) existing.quantity = Math.min(state.product.stock, existing.quantity + state.quantity); else state.cart.push({ productId: state.product.id, quantity: state.quantity }); saveState(); showToast(`${state.product.name} added to your cart.`); });
-byId('add-to-wishlist').addEventListener('click', () => { const index = state.wishlist.indexOf(state.product.id); if (index === -1) { state.wishlist.push(state.product.id); showToast(`${state.product.name} added to your wishlist.`); } else { state.wishlist.splice(index, 1); showToast('Removed from your wishlist.'); } saveState(); updateWishlistButton(); });
+byId('add-to-cart').addEventListener('click', () => showToast('Cart is not available in the backend yet.'));
+byId('cart-icon').addEventListener('click', () => byId('add-to-cart').click());
+byId('wishlist-icon').addEventListener('click', () => byId('add-to-wishlist').click());
+byId('add-to-wishlist').addEventListener('click', async () => {
+    const account = getApiSession();
+    if (!account) {
+        showToast('Sign in to save this product.');
+        byId('account-panel').hidden = false;
+        byId('account-button').setAttribute('aria-expanded', 'true');
+        return;
+    }
+    if (!state.product) return;
+    const productId = Number(state.product.id);
+    const isSaved = state.wishlist.includes(productId);
+    const button = byId('add-to-wishlist');
+    button.disabled = true;
+    byId('wishlist-icon').disabled = true;
+    try {
+        if (isSaved) await removeServerWishlistItem(account.id, productId);
+        else await addServerWishlistItem(account.id, productId);
+        await loadWishlist();
+        showToast(isSaved ? 'Removed from your wishlist.' : 'Saved to your account wishlist.');
+    } catch (error) {
+        showToast(error.message || 'Could not update your wishlist.');
+    } finally {
+        button.disabled = false;
+        byId('wishlist-icon').disabled = false;
+    }
+});
 window.addEventListener('popstate', loadPage);
-saveState(); updateAccountSummary(); loadPage();
+loadPage();
+loadWishlist().catch(error => showToast(error.message || 'Could not load your wishlist.'));
