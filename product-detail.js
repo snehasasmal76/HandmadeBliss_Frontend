@@ -17,7 +17,7 @@ function normalizeProduct(rawProduct) {
     return { ...rawProduct, name: rawProduct.name || rawProduct.title, image, images: rawProduct.images || [image], category: rawProduct.category || 'Handmade collection', details: rawProduct.details || 'Thoughtfully made by independent artisans.' };
 }
 
-const state = { product: null, quantity: 1, wishlist: [] };
+const state = { product: null, quantity: 1, wishlist: [], usingFallback: false };
 const byId = id => document.getElementById(id);
 
 function showToast(message) { const toast = byId('toast'); toast.textContent = message; toast.classList.add('show'); clearTimeout(showToast.timer); showToast.timer = setTimeout(() => toast.classList.remove('show'), 2600); }
@@ -27,7 +27,26 @@ function renderSimilarProducts(products) { const currentId = state.product.id; c
 function updateWishlistButton() { if (!state.product) return; const added = state.wishlist.includes(Number(state.product.id)); const button = byId('add-to-wishlist'); button.classList.toggle('is-added', added); button.innerHTML = added ? '<span aria-hidden="true">&#9829;</span> Added to wishlist' : '<span aria-hidden="true">&#9825;</span> Add to wishlist'; byId('wishlist-icon').innerHTML = added ? '&#9829;' : '&#9825;'; byId('wishlist-icon').setAttribute('aria-pressed', String(added)); }
 function changeQuantity(amount) { const max = Number(state.product.stock) || 1; state.quantity = Math.max(1, Math.min(max, state.quantity + amount)); byId('quantity').value = state.quantity; }
 async function loadWishlist() { const account = getApiSession(); state.wishlist = account ? await getServerWishlist(account.id) : []; updateWishlistButton(); }
-async function loadPage() { const requestedId = Number(new URLSearchParams(window.location.search).get('id')) || 1; try { const [rawProduct, products] = await Promise.all([fetchApi(`/api/products/${requestedId}`), fetchApi('/api/products?limit=100')]); renderProduct(normalizeProduct(rawProduct)); renderSimilarProducts(products); } catch (error) { byId('product-name').textContent = 'Product unavailable'; byId('product-description').textContent = 'This product could not be loaded from the store. Please try again later.'; byId('add-to-cart').disabled = true; byId('cart-icon').disabled = true; byId('add-to-wishlist').disabled = true; byId('wishlist-icon').disabled = true; byId('similar-grid').replaceChildren(); showToast(error.message || 'The product service is unavailable.'); } }
+async function loadPage() {
+    const requestedId = Number(new URLSearchParams(window.location.search).get('id')) || 1;
+    try {
+        const [rawProduct, products] = await Promise.all([
+            fetchApi(`/api/products/${requestedId}`),
+            fetchApi('/api/products?limit=100')
+        ]);
+        state.usingFallback = false;
+        renderProduct(normalizeProduct(rawProduct));
+        renderSimilarProducts(products);
+    } catch (error) {
+        const fallbackProduct = MOCK_PRODUCTS.find(product => product.id === requestedId) || MOCK_PRODUCTS[0];
+        state.usingFallback = true;
+        renderProduct(normalizeProduct(fallbackProduct));
+        renderSimilarProducts(MOCK_PRODUCTS);
+        byId('add-to-wishlist').disabled = true;
+        byId('wishlist-icon').disabled = true;
+        showToast('Live products are unavailable; showing the local product preview.');
+    }
+}
 
 initAccountPanel();
 document.addEventListener('accountchange', () => loadWishlist().catch(error => showToast(error.message)));
@@ -37,6 +56,7 @@ byId('add-to-cart').addEventListener('click', () => showToast('Cart is not avail
 byId('cart-icon').addEventListener('click', () => byId('add-to-cart').click());
 byId('wishlist-icon').addEventListener('click', () => byId('add-to-wishlist').click());
 byId('add-to-wishlist').addEventListener('click', async () => {
+    if (state.usingFallback) return;
     const account = getApiSession();
     if (!account) {
         showToast('Sign in to save this product.');
