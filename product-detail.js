@@ -17,16 +17,64 @@ function normalizeProduct(rawProduct) {
     return { ...rawProduct, name: rawProduct.name || rawProduct.title, image, images: rawProduct.images || [image], category: rawProduct.category || 'Handmade collection', details: rawProduct.details || 'Thoughtfully made by independent artisans.' };
 }
 
-const state = { product: null, quantity: 1, wishlist: [], usingFallback: false };
 const byId = id => document.getElementById(id);
+const CART_STORAGE_KEY = 'handmade-bliss-cart';
+const WISHLIST_STORAGE_KEY = 'handmade-bliss-wishlist';
+function readStoredItems(key) { try { const items = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(items) ? items : []; } catch { return []; } }
+const state = { product: null, quantity: 1, wishlist: readStoredItems(WISHLIST_STORAGE_KEY).map(item => typeof item === 'object' ? item : { id: Number(item), name: 'Saved product', image: '', price: 0 }), cart: readStoredItems(CART_STORAGE_KEY), shoppingTab: 'cart', usingFallback: false };
 
 function showToast(message) { const toast = byId('toast'); toast.textContent = message; toast.classList.add('show'); clearTimeout(showToast.timer); showToast.timer = setTimeout(() => toast.classList.remove('show'), 2600); }
 function renderGallery(product) { const list = byId('thumbnail-list'); list.innerHTML = ''; product.images.slice(0, 4).forEach((imageUrl, index) => { const button = document.createElement('button'); button.className = `thumbnail${index === 0 ? ' active' : ''}`; button.type = 'button'; button.setAttribute('aria-label', `View image ${index + 1}`); button.innerHTML = `<img src="${imageUrl}" alt="${product.name} image ${index + 1}">`; button.addEventListener('click', () => { byId('main-product-image').src = imageUrl; list.querySelectorAll('.thumbnail').forEach(item => item.classList.remove('active')); button.classList.add('active'); }); list.appendChild(button); }); }
 function renderProduct(product) { state.product = product; state.quantity = 1; const stock = Number(product.stock) || 0; byId('main-product-image').src = product.image; byId('main-product-image').alt = product.name; byId('product-name').textContent = product.name; byId('product-category').textContent = product.category; byId('product-price').textContent = `₹${product.price.toLocaleString('en-IN')}`; byId('product-description').textContent = product.description; byId('product-id').textContent = `Product ID: HB-${String(product.id).padStart(3, '0')}`; byId('quantity').value = 1; byId('quantity').max = stock; byId('breadcrumb-category').textContent = product.category; byId('breadcrumb-name').textContent = product.name; byId('product-details').textContent = product.details || 'Thoughtfully made by independent artisans.'; byId('product-material').textContent = product.material || 'See product description'; byId('product-care').textContent = product.care || ''; byId('availability-heading').textContent = stock > 0 ? 'Ready to ship' : 'Currently unavailable'; byId('availability-copy').textContent = stock > 0 ? `${stock} pieces available. Your order will be carefully packed and dispatched within 2-3 business days.` : 'This piece is currently out of stock. Check back soon for the next artisan batch.'; byId('stock-message').textContent = stock > 0 ? `${stock} available` : 'Out of stock'; document.querySelector('.availability-dot').style.background = stock > 0 ? '#3cb27c' : '#e87568'; byId('add-to-cart').disabled = stock === 0; byId('cart-icon').disabled = stock === 0; byId('add-to-wishlist').disabled = false; byId('wishlist-icon').disabled = false; renderGallery(product); updateWishlistButton(); document.title = `Handmade Bliss | ${product.name}`; }
 function renderSimilarProducts(products) { const currentId = state.product.id; const grid = byId('similar-grid'); grid.innerHTML = ''; products.filter(product => Number(product.id) !== Number(currentId)).slice(0, 6).forEach(rawProduct => { const product = normalizeProduct(rawProduct); const card = document.createElement('a'); card.className = 'similar-card'; card.href = `product-detail.html?id=${product.id}`; card.innerHTML = `<div class="similar-image"><img src="${product.image}" alt="${product.name}" loading="lazy"></div><h3>${product.name}</h3><p>${product.category}</p><p class="similar-price">₹${Number(product.price).toLocaleString('en-IN')}</p>`; card.addEventListener('click', event => { event.preventDefault(); history.pushState({}, '', card.href); loadPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); }); grid.appendChild(card); }); }
-function updateWishlistButton() { if (!state.product) return; const added = state.wishlist.includes(Number(state.product.id)); const button = byId('add-to-wishlist'); button.classList.toggle('is-added', added); button.innerHTML = added ? '<span aria-hidden="true">&#9829;</span> Added to wishlist' : '<span aria-hidden="true">&#9825;</span> Add to wishlist'; byId('wishlist-icon').innerHTML = added ? '&#9829;' : '&#9825;'; byId('wishlist-icon').setAttribute('aria-pressed', String(added)); }
+function updateWishlistButton() { if (!state.product) return; const added = state.wishlist.some(item => Number(item.id) === Number(state.product.id)); const button = byId('add-to-wishlist'); button.classList.toggle('is-added', added); button.innerHTML = added ? '<span aria-hidden="true">&#9829;</span> Added to wishlist' : '<span aria-hidden="true">&#9825;</span> Add to wishlist'; byId('wishlist-icon').innerHTML = added ? '&#9829;' : '&#9825;'; }
 function changeQuantity(amount) { const max = Number(state.product.stock) || 1; state.quantity = Math.max(1, Math.min(max, state.quantity + amount)); byId('quantity').value = state.quantity; }
-async function loadWishlist() { const account = getApiSession(); state.wishlist = account ? await getServerWishlist(account.id) : []; updateWishlistButton(); }
+function saveShoppingState() { localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state.cart)); localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(state.wishlist)); updateCartCount(); updateWishlistButton(); renderShoppingPanel(); }
+function updateCartCount() { const count = state.cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0); const badge = byId('cart-count'); badge.textContent = count; badge.hidden = count === 0; }
+function createShoppingItem(item, tab) {
+    const row = document.createElement('article'); row.className = 'shopping-item';
+    const image = document.createElement('img'); image.src = item.image || 'https://placehold.co/100x100/f2eee7/1f2a24?text=HB'; image.alt = item.name || 'Handmade product';
+    const details = document.createElement('div'); details.className = 'shopping-item-details';
+    const name = document.createElement('strong'); name.textContent = item.name || 'Saved product';
+    const price = document.createElement('span'); price.textContent = `₹${Number(item.price || 0).toLocaleString('en-IN')}`;
+    details.append(name, price);
+    if (tab === 'cart') {
+        const quantity = document.createElement('div'); quantity.className = 'shopping-quantity';
+        const decrease = document.createElement('button'); decrease.type = 'button'; decrease.dataset.action = 'decrease'; decrease.dataset.id = item.id; decrease.setAttribute('aria-label', 'Decrease quantity'); decrease.textContent = '-';
+        const count = document.createElement('span'); count.textContent = item.quantity;
+        const increase = document.createElement('button'); increase.type = 'button'; increase.dataset.action = 'increase'; increase.dataset.id = item.id; increase.setAttribute('aria-label', 'Increase quantity'); increase.textContent = '+';
+        quantity.append(decrease, count, increase);
+        details.appendChild(quantity);
+    }
+    const remove = document.createElement('button'); remove.className = 'shopping-remove'; remove.type = 'button'; remove.dataset.action = 'remove'; remove.dataset.id = item.id; remove.textContent = 'Remove';
+    row.append(image, details, remove);
+    return row;
+}
+function renderShoppingPanel() {
+    const tab = state.shoppingTab;
+    const isCart = tab === 'cart';
+    const items = isCart ? state.cart : state.wishlist;
+    byId('shopping-panel-title').textContent = isCart ? 'Your cart' : 'Your wishlist';
+    byId('cart-tab').setAttribute('aria-selected', String(isCart));
+    byId('wishlist-tab').setAttribute('aria-selected', String(!isCart));
+    const list = byId('shopping-items'); list.replaceChildren();
+    if (!items.length) {
+        const empty = document.createElement('p'); empty.className = 'shopping-empty'; empty.textContent = isCart ? 'Your cart is empty.' : 'Your wishlist is empty.'; list.appendChild(empty);
+    } else items.forEach(item => list.appendChild(createShoppingItem(item, tab)));
+    const total = byId('cart-total');
+    total.hidden = !isCart || !items.length;
+    if (isCart && items.length) total.textContent = `Subtotal · ₹${state.cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0).toLocaleString('en-IN')}`;
+}
+function openShoppingPanel(tab) { state.shoppingTab = tab; renderShoppingPanel(); byId('shopping-panel').hidden = false; }
+function addCurrentProductToCart() {
+    if (!state.product) return;
+    const productId = Number(state.product.id);
+    const existing = state.cart.find(item => Number(item.id) === productId);
+    const stock = Number(state.product.stock) || state.quantity;
+    if (existing) existing.quantity = Math.min(stock, Number(existing.quantity) + state.quantity);
+    else state.cart.push({ id: productId, name: state.product.name, image: state.product.image, price: Number(state.product.price) || 0, stock, quantity: Math.min(stock, state.quantity) });
+    saveShoppingState(); openShoppingPanel('cart'); showToast('Added to your cart.');
+}
 async function loadPage() {
     const requestedId = Number(new URLSearchParams(window.location.search).get('id')) || 1;
     try {
@@ -42,46 +90,44 @@ async function loadPage() {
         state.usingFallback = true;
         renderProduct(normalizeProduct(fallbackProduct));
         renderSimilarProducts(MOCK_PRODUCTS);
-        byId('add-to-wishlist').disabled = true;
-        byId('wishlist-icon').disabled = true;
         showToast('Live products are unavailable; showing the local product preview.');
     }
 }
 
 initAccountPanel();
-document.addEventListener('accountchange', () => loadWishlist().catch(error => showToast(error.message)));
 byId('decrease-quantity').addEventListener('click', () => changeQuantity(-1));
 byId('increase-quantity').addEventListener('click', () => changeQuantity(1));
-byId('add-to-cart').addEventListener('click', () => showToast('Cart is not available in the backend yet.'));
-byId('cart-icon').addEventListener('click', () => byId('add-to-cart').click());
-byId('wishlist-icon').addEventListener('click', () => byId('add-to-wishlist').click());
-byId('add-to-wishlist').addEventListener('click', async () => {
-    if (state.usingFallback) return;
-    const account = getApiSession();
-    if (!account) {
-        showToast('Sign in to save this product.');
-        byId('account-panel').hidden = false;
-        byId('account-button').setAttribute('aria-expanded', 'true');
-        return;
-    }
+byId('add-to-cart').addEventListener('click', addCurrentProductToCart);
+byId('cart-icon').addEventListener('click', () => openShoppingPanel('cart'));
+byId('wishlist-icon').addEventListener('click', () => openShoppingPanel('wishlist'));
+byId('add-to-wishlist').addEventListener('click', () => {
     if (!state.product) return;
     const productId = Number(state.product.id);
-    const isSaved = state.wishlist.includes(productId);
-    const button = byId('add-to-wishlist');
-    button.disabled = true;
-    byId('wishlist-icon').disabled = true;
-    try {
-        if (isSaved) await removeServerWishlistItem(account.id, productId);
-        else await addServerWishlistItem(account.id, productId);
-        await loadWishlist();
-        showToast(isSaved ? 'Removed from your wishlist.' : 'Saved to your account wishlist.');
-    } catch (error) {
-        showToast(error.message || 'Could not update your wishlist.');
-    } finally {
-        button.disabled = false;
-        byId('wishlist-icon').disabled = false;
-    }
+    const existingIndex = state.wishlist.findIndex(item => Number(item.id) === productId);
+    const isSaved = existingIndex !== -1;
+    if (isSaved) state.wishlist.splice(existingIndex, 1);
+    else state.wishlist.push({ id: productId, name: state.product.name, image: state.product.image, price: Number(state.product.price) || 0 });
+    saveShoppingState();
+    showToast(isSaved ? 'Removed from your wishlist.' : 'Saved to your wishlist.');
+});
+byId('cart-tab').addEventListener('click', () => { state.shoppingTab = 'cart'; renderShoppingPanel(); });
+byId('wishlist-tab').addEventListener('click', () => { state.shoppingTab = 'wishlist'; renderShoppingPanel(); });
+byId('shopping-close').addEventListener('click', () => { byId('shopping-panel').hidden = true; });
+byId('shopping-items').addEventListener('click', event => {
+    const button = event.target.closest('[data-action]');
+    if (!button) return;
+    const itemId = Number(button.dataset.id);
+    const action = button.dataset.action;
+    if (state.shoppingTab === 'cart') {
+        const item = state.cart.find(entry => Number(entry.id) === itemId);
+        if (!item) return;
+        if (action === 'remove') state.cart = state.cart.filter(entry => Number(entry.id) !== itemId);
+        else if (action === 'increase') item.quantity = Math.min(Number(item.stock) || Infinity, Number(item.quantity) + 1);
+        else if (action === 'decrease') item.quantity = Math.max(1, Number(item.quantity) - 1);
+    } else if (action === 'remove') state.wishlist = state.wishlist.filter(entry => Number(entry.id) !== itemId);
+    saveShoppingState();
 });
 window.addEventListener('popstate', loadPage);
+updateCartCount();
+renderShoppingPanel();
 loadPage();
-loadWishlist().catch(error => showToast(error.message || 'Could not load your wishlist.'));

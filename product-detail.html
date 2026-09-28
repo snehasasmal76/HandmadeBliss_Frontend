@@ -16,8 +16,8 @@
             </a>
             <div class="header-actions">
                 <button class="icon-button" type="button" aria-label="Search" title="Search">&#9906;</button>
-                <button class="icon-button" type="button" id="wishlist-icon" aria-label="Save this product to your wishlist" title="Save this product to your wishlist">&#9825;</button>
-                <button class="cart-button" type="button" id="cart-icon" aria-label="Add this product to your cart" title="Add this product to your cart"><span aria-hidden="true">&#128722;</span></button>
+                <button class="icon-button" type="button" id="wishlist-icon" aria-label="View your wishlist" title="View your wishlist">&#9825;</button>
+                <button class="cart-button" type="button" id="cart-icon" aria-label="View your cart" title="View your cart"><span aria-hidden="true">&#128722;</span><b id="cart-count" hidden>0</b></button>
                 <button class="account-button" type="button" id="account-button" aria-expanded="false" aria-controls="account-panel">Account</button>
             </div>
         </nav>
@@ -95,6 +95,22 @@
             <button class="account-close" type="button" id="account-close" aria-label="Close account details">&times;</button>
         </div>
         <div id="account-content"></div>
+    </aside>
+
+    <aside class="shopping-panel" id="shopping-panel" aria-label="Shopping list" hidden>
+        <div class="account-panel-header">
+            <div>
+                <p class="eyebrow">Your shopping</p>
+                <h2 id="shopping-panel-title">Your cart</h2>
+            </div>
+            <button class="account-close" type="button" id="shopping-close" aria-label="Close shopping panel">&times;</button>
+        </div>
+        <div class="shopping-tabs" role="tablist" aria-label="Cart and wishlist">
+            <button type="button" id="cart-tab" role="tab" aria-selected="true">Cart</button>
+            <button type="button" id="wishlist-tab" role="tab" aria-selected="false">Wishlist</button>
+        </div>
+        <div class="shopping-items" id="shopping-items"></div>
+        <div class="cart-total" id="cart-total" hidden></div>
     </aside>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
